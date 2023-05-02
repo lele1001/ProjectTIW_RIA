@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="ISO-8859-1">
+
+    <title>Login page</title>
+    <link rel="stylesheet" type="text/css" media="all" href="./myStyle.css"/>
+    <script src="./utils.js" charset="utf-8" defer></script>
+    <script src="./login.js" charset="utf-8" defer></script>
+</head>
+
+<body>
+<h1>Welcome in OnlineAuctions website!</h1>
+
+<p style="text-align: center;">Insert your username and your
+    password to login</p>
+
+<form id="loginForm" class="createForm" action="#" method="POST">
+    <fieldset>
+        <p><label>Username:
+            <input type="text" id="username" name="username" required>
+        </label>
+        </p>
+        <p><label>Password:
+            <input type="password" id="pwd" name="password" required>
+        </label>
+        </p>
+        <button id="loginButton" type="submit" value="Login">Login</button>
+        <p id="loginError"></p>
+    </fieldset>
+</form>
+</body>
+
+</html>
