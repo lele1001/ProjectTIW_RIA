@@ -24,6 +24,21 @@
 					if (req.readyState === XMLHttpRequest.DONE) {
 						switch (req.status) {
 							case 200:
+								// memorizes the user's cookies for a future use				
+								let username = getCookie('username');
+
+								let auctionsCookie = getCookie('recentlyViewedAuctions');
+								let recentlyViewedAuctions = new Array();
+
+								if (auctionsCookie !== "") {
+									recentlyViewedAuctions = JSON.parse(auctionsCookie);
+									replaceCookie('seenAucBy' + username, recentlyViewedAuctions);
+									cancelCookie('recentlyViewedAuctions');
+								}
+
+								replaceCookie('lastActionBy' + username, getCookie('lastAction'));
+								cancelCookie('lastAction');
+
 								cancelCookie('username');
 								window.sessionStorage.removeItem('username');
 								window.location.href = "index.html";
@@ -60,9 +75,9 @@
 								case 200:
 									let auctionsList = JSON.parse(req.responseText);
 
-									if (auctionsList === "No auctions found") {
+									if (auctionsList === null) {
 										alertBox.style.display = "block";
-										alertBox.textContent = message;
+										alertBox.textContent = "No auctions found";
 										keyAuctionsList.noAuc();
 										return;
 									}
@@ -117,7 +132,7 @@
 			listContainerBody.style.display = "block";
 			listContainerBody.innerHTML = "";
 
-			let row, aucIDCell, ownIDCell, titleCell, linkCell, anchor, linkText;
+			let row, aucIDCell, ownIDCell, titleCell, remTimeCell, linkCell, anchor, linkText;
 			let self = this;
 
 			auctionsList.forEach((auction) => {
@@ -134,6 +149,10 @@
 				titleCell = document.createElement("td");
 				titleCell.textContent = auction.title;
 				row.appendChild(titleCell);
+
+				remTimeCell = document.createElement("td");
+				remTimeCell.textContent = auction.remTime;
+				row.appendChild(remTimeCell);
 
 				linkCell = document.createElement("td");
 				anchor = document.createElement("a");
@@ -166,8 +185,8 @@
 	}
 
 	/**
- * Shows the list of the auctions found with the given key
- */
+	  * Shows the list of the auctions found with the given key
+	  */
 	function RecentlySeenAuc(listContainer, listContainerBody) {
 		this.listContainerBody = listContainerBody;
 
@@ -175,98 +194,89 @@
 			listContainer.style.display = "none";
 		}
 
-		this.show = (auctionsList) => {
-			let jsonCookie = getCookie("recentlyViewedAuction");
-			let auctionList = [];
+		this.show = () => {
+			let jsonCookie = getCookie('recentlyViewedAuctions');
 
-			if (!jsonCookie || (JSON.parse(jsonCookie).length === 0)) {
+			if (!jsonCookie) {
 				this.hide();
 				return;
-			}
+			} else if (jsonCookie) {
+				if (jsonCookie.charAt(0) !== "[") {
+					jsonCookie = "[" + jsonCookie + "]";
+				}
+				
+				let auctionsList = JSON.parse(jsonCookie);
 
-			if (jsonCookie) {
-				let recentlyViewedAuction = JSON.parse(jsonCookie);
-				let size = recentlyViewedAuction.lenght;
-				let self = this;
+				makeCall("GET", "RecentAuctionsListRIA?auctionIDs=" + auctionsList, null, (req) => {
+					if (req.readyState === XMLHttpRequest.DONE) {
+						let message = req.responseText;
 
-				recentlyViewedAuction.forEach((id) => {
-					makeCall("GET", "OpenAuctionDetailsRIA?auctionID=" + id, null, (req) => {
-						if (req.readyState === XMLHttpRequest.DONE) {
-							let message = req.responseText;
+						switch (req.status) {
+							case 200:
+								let auctionsList = JSON.parse(req.responseText);
 
-							switch (req.status) {
-								case 200:
-									let auction = JSON.parse(req.responseText);
-
-									if (auction.open) {
-										auctionList.push(auction);
-									} else {
-										size--;
-									}
-
-									if (auctionList.length === size) {
-										listContainer.style.display = "block";
-										listContainerBody.innerHTML = "";
-
-										if (auctionsList.length === 0) {
-											listContainer.style.display = "none";
-											return;
-										}
-
-										let row, aucIDCell, ownIDCell, titleCell, linkCell, anchor, linkText;
-										let self = this;
-
-										auctionsList.forEach((auction) => {
-											row = document.createElement("tr");
-
-											aucIDCell = document.createElement("td");
-											aucIDCell.textContent = auction.auctionID;
-											row.appendChild(aucIDCell);
-
-											ownIDCell = document.createElement("td");
-											ownIDCell.textContent = auction.ownerID;
-											row.appendChild(ownIDCell);
-
-											titleCell = document.createElement("td");
-											titleCell.textContent = auction.title;
-											row.appendChild(titleCell);
-
-											linkCell = document.createElement("td");
-											anchor = document.createElement("a");
-											linkCell.appendChild(anchor);
-											linkText = document.createTextNode("Details");
-
-											anchor.appendChild(linkText);
-											anchor.setAttribute('auctionID', auction.auctionID);
-											anchor.addEventListener("click", (e) => {
-												// Decides if the close auction button or the offer form have to be shown
-												if (window.sessionStorage.getItem("userID") !== auction.ownerID) {
-													pageOrchestrator.openDetailsForOffer(auctionID);
-												}
-												else {
-													pageOrchestrator.openDetailsForOwner(auctionID);
-												}
-											});
-
-											anchor.href = "#";
-											row.appendChild(linkCell);
-
-											self.listContainerBody.appendChild(row);
-										});
-									}
-
-									break;
-								case 403:
-									cancelCookie('username');
-									window.location.href = "index.html";
-									break;
-								default:
-									alert(message);
+								if (auctionsList === null) {
+									listContainer.style.display = "none";
 									return;
-							}
+								}
+
+								listContainer.style.display = "block";
+								this.listContainerBody.innerHTML = "";
+
+
+								let row, aucIDCell, ownIDCell, titleCell, linkCell, anchor, linkText;
+								let self = this;
+
+								auctionsList.forEach((auction) => {
+									row = document.createElement("tr");
+
+									aucIDCell = document.createElement("td");
+									aucIDCell.textContent = auction.auctionID;
+									row.appendChild(aucIDCell);
+
+									ownIDCell = document.createElement("td");
+									ownIDCell.textContent = auction.ownerID;
+									row.appendChild(ownIDCell);
+
+									titleCell = document.createElement("td");
+									titleCell.textContent = auction.title;
+									row.appendChild(titleCell);
+
+									linkCell = document.createElement("td");
+									anchor = document.createElement("a");
+									linkCell.appendChild(anchor);
+									linkText = document.createTextNode("Details");
+
+									anchor.appendChild(linkText);
+									anchor.setAttribute('auctionID', auction.auctionID);
+									anchor.addEventListener("click", (e) => {
+										// Decides if the close auction button or the offer form have to be shown
+										if (window.sessionStorage.getItem("userID") !== parseInt(auction.ownerID)) {
+											pageOrchestrator.openDetailsForOffer(auction.auctionID);
+										}
+										else {
+											pageOrchestrator.openDetailsForOwner(auction.auctionID);
+										}
+									});
+
+									anchor.href = "#";
+									row.appendChild(linkCell);
+
+									self.listContainerBody.appendChild(row);
+								});
+
+								return;
+							case 403:
+								cancelCookie('username');
+								window.location.href = "index.html";
+								break;
+							default:
+								self.alertBox.style.display = "block";
+								self.alertBox.textContent = message;
+								break;
 						}
-					});
-				})
+					}
+				});
 			}
 		}
 	}
@@ -371,10 +381,6 @@
 			let self = this;
 			let auctionsList = null;
 
-			this.alertBox.style.display = "none";
-			listContainer.style.display = "block";
-			this.listContainerBody.innerHTML = "";
-
 			makeCall("GET", "OpenAuctionsListRIA", null, (req) => {
 				if (req.readyState === XMLHttpRequest.DONE) {
 					let message = req.responseText;
@@ -383,14 +389,18 @@
 						case 200:
 							auctionsList = JSON.parse(req.responseText);
 
-							if (auctionsList === []) {
+							if (auctionsList === null) {
 								alertBox.style.display = "block";
 								alertBox.textContent = "No auctions found";
 								listContainer.style.display = "none";
 								return;
 							}
 
-							let row, auctionIDCell, titleCell, actualPriceCell, expiryDateCell, linkCell, anchor, linkText;
+							this.alertBox.style.display = "none";
+							listContainer.style.display = "block";
+							this.listContainerBody.innerHTML = "";
+
+							let row, auctionIDCell, titleCell, actualPriceCell, remTimeCell, linkCell, anchor, linkText;
 
 							auctionsList.forEach((auction) => {
 								row = document.createElement("tr");
@@ -407,9 +417,9 @@
 								actualPriceCell.textContent = auction.actualPrice;
 								row.appendChild(actualPriceCell);
 
-								expiryDateCell = document.createElement("td");
-								expiryDateCell.textContent = auction.expiryDate;
-								row.appendChild(expiryDateCell);
+								remTimeCell = document.createElement("td");
+								remTimeCell.textContent = auction.remTime;
+								row.appendChild(remTimeCell);
 
 								linkCell = document.createElement("td");
 								anchor = document.createElement("a");
@@ -421,7 +431,7 @@
 								anchor.addEventListener("click", (e) => {
 									pageOrchestrator.openDetailsForOwner(auction.auctionID);
 
-									if (Date.now() <= auction.expiryDate) {
+									if (Date.now() <= Date.parse(auction.expiryDate)) {
 										closeAucButton.hide();
 									}
 								});
@@ -591,6 +601,7 @@
 		this.show = () => {
 			formContainer.style.display = "block";
 			myArticles.show();
+			this.articleIDs = [];
 		}
 
 		this.registerEvent = () => {
@@ -598,21 +609,22 @@
 				let checkboxes = document.querySelectorAll('input[type="checkbox"][name="articleID"]');
 
 				checkboxes.forEach((checkbox) => {
-					checkbox.addEventListener('change', (e) => {
-						this.articleIDs = Array.from(checkboxes).filter(c => c.checked).map(i => i.nodeValue);
-					})
+					if (checkbox.checked) {
+						this.articleIDs.push(checkbox.value);
+					}
 				});
 
 				let form = e.target.closest("form");
 
 				if (form.checkValidity()) {
-					makeCall("POST", "CreateAuctionRIA?articleIDs=" + articleIDs, form, (req) => {
+					makeCall("POST", "CreateAuctionRIA?articleIDs=" + this.articleIDs, form, (req) => {
 						if (req.readyState === XMLHttpRequest.DONE) {
 							let message = req.responseText;
 
 							switch (req.status) {
 								case 200:
 									setCookie("lastAction", "SELL", 30);
+									this.articleIDs = [];
 									pageOrchestrator.showSell();
 									break;
 								case 403:
@@ -633,8 +645,8 @@
 	}
 
 	/**
- * Form that allows to create a new auction
- */
+	  * shows the user articles that are available for a new auction
+	  */
 	function MyArticles(alertBox, listContainer, listContainerBody) {
 		this.alertBox = alertBox;
 		this.listContainerBody = listContainerBody;
@@ -660,19 +672,22 @@
 						case 200:
 							articlesList = JSON.parse(req.responseText);
 
-							if (articlesList === []) {
+							if (articlesList === null) {
 								alertBox.style.display = "block";
-								this.alertBox.textContent = "No articles found";
+								this.alertBox.textContent = "No articles found. Before creating a new auction, insert at least an article";
 								listContainer.style.display = "none";
+								document.getElementById("auctionForm").style.display = "none";
 								return;
 							}
 
-							let row, articleIDCell, nameCell, priceCell, checkboxCell;
+							document.getElementById("auctionForm").style.display = "block";
+							let row, articleIDCell, nameCell, priceCell, checkboxCell, checkbox;
 
 							articlesList.forEach((article) => {
 								row = document.createElement("tr");
 
 								articleIDCell = document.createElement("td");
+								articleIDCell.insertAdjacentHTML('beforeend', "<id='myArtID' />");
 								articleIDCell.textContent = article.articleID;
 								row.appendChild(articleIDCell);
 
@@ -684,9 +699,13 @@
 								priceCell.textContent = article.price;
 								row.appendChild(priceCell);
 
+								checkbox = document.createElement('input');
+								checkbox.type = "checkbox";
+								checkbox.name = "articleID";
+								checkbox.value = article.articleID;
+
 								checkboxCell = document.createElement("td");
-								checkboxCell.insertAdjacentHTML('beforeend', "<input type='checkbox' name='articleID' /> ");
-								checkboxCell.nodeValue = article.articleID;
+								checkboxCell.appendChild(checkbox);
 								row.appendChild(checkboxCell);
 
 								this.listContainerBody.appendChild(row);
@@ -742,6 +761,7 @@
 
 							auctionIDCell = document.createElement("td");
 							auctionIDCell.textContent = auctionID;
+							auctionIDCell.insertAdjacentHTML('beforeend', "<id='detAucID' />");
 							row.appendChild(auctionIDCell);
 
 							titleCell = document.createElement("td");
@@ -769,22 +789,22 @@
 							auctionArticles.show(auction.auctionID);
 
 							// Adds the auction to the recently seen list
-							let jsonCookie = getCookie("recentlyViewedAuction");
-							let recentlyViewedAuctions = new Array();
+							let aucCookieList = getCookie('recentlyViewedAuctions');
+							let aucID = parseInt(auction.auctionID);
+							let seenList = new Array();
 
-							if (jsonCookie) {
-								let aucID = parseInt(auction.auctionID);
-								recentlyViewedAuction = JSON.parse(jsonCookie);
+							if (aucCookieList) {
+								seenList = JSON.parse(aucCookieList);
 
-								if (!recentlyViewedAuction.includes(aucID)) {
-									recentlyViewedAuction.push(aucID);
+								if ((seenList.find(i => i === aucID) === undefined) || (!seenList.includes(aucID))) {
+									seenList.push(aucID);
 								}
 							} else {
-								recentlyViewedAuctions.push(aucID);
+								seenList.push(aucID);
 							}
 
-							let newJson = JSON.stringify(recentlyViewedAuction);
-							setCookie("recentlyViewedAuction", newJson, 30);
+							let newJson = JSON.stringify(seenList);
+							setCookie('recentlyViewedAuctions', newJson, 30);
 							break;
 						case 403:
 							cancelCookie('username');
@@ -882,9 +902,10 @@
 
 				if (form.checkValidity()) {
 					let self = this;
-					let auctionID = form.getAttribute("auctionID");
+					let auctionID = document.getElementById("offerID").value;
+					let price = document.getElementById("offerPrice").value;
 
-					makeCall("POST", "MakeAnOfferRIA?auctionID=" + auctionID, form, (req) => {
+					makeCall("POST", "MakeAnOfferRIA?auctionID=" + auctionID + "&price=" + price, form, (req) => {
 						if (req.readyState === XMLHttpRequest.DONE) {
 							let message = req.responseText;
 
@@ -927,9 +948,11 @@
 		this.registerEvent = () => {
 			document.getElementById("closeSubmit").addEventListener('click', (e) => {
 				let form = e.target.closest("form");
+				let auctionID = document.getElementById("closeID").value;
+				cancelCookie(auctionID);
 
 				if (form.checkValidity()) {
-					makeCall("POST", "CloseOpenAuctionRIA", form, (req) => {
+					makeCall("POST", "CloseOpenAuctionRIA?auctionID=" + auctionID, form, (req) => {
 						if (req.readyState === XMLHttpRequest.DONE) {
 							let message = req.responseText;
 
@@ -958,7 +981,7 @@
 		}
 
 		this.show = (auctionID) => {
-			document.getElementById("closeID").nodeValue = auctionID;
+			document.getElementById("closeID").value = auctionID;
 			formContainer.style.display = "block";
 		}
 	}
@@ -1308,19 +1331,24 @@
 
 	window.addEventListener("load", () => {
 
-		const userName = getCookie('username');
-		const lastUser = getCookie('lastUser');
+		const username = getCookie('username');
 
-		if (!(userName)) {
+		if (!(username)) {
 			window.location.href = "index.html";
 		} else {
+			let pastAucSeen = getCookie('seenAucBy' + username);
+			let lastSessionAction = getCookie('lastActionBy' + username);
 
-			if ((!(lastUser)) || (lastUser !== userName)) {
-				cancelCookie('recentlyViewedAuction');
-				cancelCookie('lastAction');
+			if (pastAucSeen !== "") {
+				replaceCookie('recentlyViewedAuctions', pastAucSeen);
+				cancelCookie('seenAucBy' + username);
 			}
 
-			setCookie('lastUser', userName, 30);
+			if (lastSessionAction !== "") {
+				replaceCookie('lastAction', lastSessionAction);
+				cancelCookie('lastActionBy' + username);
+			}
+
 			pageOrchestrator.start();
 		}
 	}, false);

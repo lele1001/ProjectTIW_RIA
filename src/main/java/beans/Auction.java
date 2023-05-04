@@ -12,6 +12,7 @@ public class Auction {
     private int winnerID;
     private float actualPrice;
     private int isClosed;
+	private String remTime;
 
     public Auction(int auctionID, int ownerID, String title, float startingPrice, float minIncrease,
                    LocalDateTime expiryDate, float actualPrice, int isClosed) {
@@ -73,4 +74,8 @@ public class Auction {
     public float getActualPrice() {
         return actualPrice;
     }
+
+	public void setRemainingTime(String remainingTime) {
+		this.remTime = remainingTime;		
+	}
 }

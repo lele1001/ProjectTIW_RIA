@@ -80,6 +80,10 @@ public class UserArticlesRIA extends HttpServlet {
 			response.setStatus(HttpServletResponse.SC_NOT_FOUND);
 			return;
 		}
+		
+		if(userArticles.size() == 0) {
+			userArticles = null;
+		}
 
 		Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
 		String json = gson.toJson(userArticles);

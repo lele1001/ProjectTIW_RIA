@@ -5,6 +5,7 @@ import java.io.Serial;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import javax.servlet.ServletContext;
@@ -56,10 +57,19 @@ public class OpenAuctionsListRIA extends HttpServlet {
 		return false;
 	}
 
+	private String getRemainingTime(LocalDateTime from, LocalDateTime to) {
+		long diffDays = ChronoUnit.DAYS.between(from, to);
+		long diffHours = ChronoUnit.HOURS.between(from, to);
+		long hoursBetween = diffHours - (diffDays * 24);
+
+		return diffDays + " days and " + hoursBetween + " hours";
+	}
+
 	private void setupPage(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		List<Auction> openAuctions;
 		User user = (User) request.getSession(false).getAttribute("user");
 		int userID = user.getUserID();
+		LocalDateTime loginTime = (LocalDateTime) request.getSession(false).getAttribute("loginTime");
 
 		// checks if the connection is active
 		if (checkConnection(connection)) {
@@ -68,6 +78,15 @@ public class OpenAuctionsListRIA extends HttpServlet {
 			try {
 				// retrieves all user's open auctions ordered by deadline ascending
 				openAuctions = auc.getOpenAuctionsByUser(userID);
+				
+				if (openAuctions != null && !openAuctions.isEmpty()) {
+					for (Auction a : openAuctions) {
+						String remainingTime = getRemainingTime(loginTime, a.getExpiryDate());
+						a.setRemainingTime(remainingTime);
+					}
+				} else {
+					openAuctions = null;
+				}
 			} catch (SQLException e) {
 				e.printStackTrace();
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

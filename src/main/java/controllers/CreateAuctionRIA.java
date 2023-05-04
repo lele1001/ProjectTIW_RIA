@@ -73,7 +73,8 @@ public class CreateAuctionRIA extends HttpServlet {
 
     private void createAuction(HttpServletRequest request, HttpServletResponse response) throws IOException {
         User user = (User) request.getSession(false).getAttribute("user");
-        String[] articlesIDs = request.getParameterValues("articleIDs");
+        String articleIDsStr = request.getParameter("articleIDs");
+        String[] articlesIDs;
 
         int auctionID;
 
@@ -115,6 +116,8 @@ public class CreateAuctionRIA extends HttpServlet {
 
             ArticleDAO art = new ArticleDAO(connection);
 
+            articlesIDs = articleIDsStr.split(",");
+            
             for (String s : articlesIDs) {
                 int articleID = Integer.parseInt(s);
 

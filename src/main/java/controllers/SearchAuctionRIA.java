@@ -5,6 +5,7 @@ import java.io.Serial;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import javax.servlet.ServletException;
@@ -60,9 +61,18 @@ public class SearchAuctionRIA extends HttpServlet {
 		// characters
 		return key.matches("[a-zA-Z]+") && key.length() > 2 && key.length() < 21;
 	}
+	
+	private String getRemainingTime(LocalDateTime from, LocalDateTime to) {
+		long diffDays = ChronoUnit.DAYS.between(from, to);
+		long diffHours = ChronoUnit.HOURS.between(from, to);
+		long hoursBetween = diffHours - (diffDays * 24);
+
+		return diffDays + " days and " + hoursBetween + " hours";
+	}
 
 	private void setupPage(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String key = request.getParameter("key");
+		LocalDateTime loginTime = (LocalDateTime) request.getSession(false).getAttribute("loginTime");
 
 		List<Auction> keyAuctions = null;
 
@@ -75,6 +85,15 @@ public class SearchAuctionRIA extends HttpServlet {
 					try {
 						// retrieves all the auctions with articles that contain the keyword
 						keyAuctions = auc.searchByKeyword(key);
+						
+						if (keyAuctions != null && !keyAuctions.isEmpty()) {
+							for (Auction a : keyAuctions) {
+								String remainingTime = getRemainingTime(loginTime, a.getExpiryDate());
+								a.setRemainingTime(remainingTime);
+							}
+						} else {
+							keyAuctions = null;
+						}
 					} catch (SQLException e) {
 						e.printStackTrace();
 						response.getWriter().println("Errore: accesso al database fallito!");
@@ -91,14 +110,7 @@ public class SearchAuctionRIA extends HttpServlet {
 
 			Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
 					.create();
-			String json;
-			
-			if (keyAuctions.size() != 0) {
-				json = gson.toJson(keyAuctions);
-			} else {
-				String noAuc = "No auctions found";
-				json = gson.toJson(noAuc);
-			}
+			String json = gson.toJson(keyAuctions);
 
 			response.setStatus(HttpServletResponse.SC_OK);
 			response.setContentType("application/json");

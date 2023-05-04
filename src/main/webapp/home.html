@@ -69,7 +69,7 @@
 		<div id="buyContainer">
 			<div>
 				<h2 class="special">Auctions you won:</h2>
-				<table id="wonAuctions" class="tableArrangement">
+				<table class="tableArrangement" id="wonAuctions">
 					<thead>
 						<tr>
 							<th>AuctionID</th>
@@ -87,12 +87,13 @@
 
 			<div id="keyAucContainer">
 				<h2 class="special">Open auctions that contains the keyword</h2>
-				<table id="keyAuctions" class="tableArrangement">
+				<table class="tableArrangement" id="keyAuctions">
 					<thead>
 						<tr>
 							<th>AuctionID</th>
 							<th>OwnerID</th>
 							<th>Title</th>
+							<th>Remaining Time</th>
 							<th>Link</th>
 						</tr>
 					</thead>
@@ -122,13 +123,13 @@
 		<div id="sellContainer">
 			<div>
 				<h2 class="special">Your Open Auctions:</h2>
-				<table id="openAuctions" class="tableArrangement">
+				<table class="tableArrangement" id="openAuctions">
 					<thead>
 						<tr>
 							<th>AuctionID</th>
 							<th>Title</th>
 							<th>Actual Price</th>
-							<th>Expiry Date</th>
+							<th>Remaining Time</th>
 							<th>Link</th>
 						</tr>
 					</thead>
@@ -142,7 +143,7 @@
 
 			<div>
 				<h2 class="special">Your Closed Auctions:</h2>
-				<table id="closedAuctions" class="tableArrangement">
+				<table class="tableArrangement" id="closedAuctions">
 					<thead>
 						<tr>
 							<th>AuctionID</th>
@@ -193,47 +194,49 @@
 
 			<div id="createAuctionForm">
 				<h2 class="special">Create Auction:</h2>
-				<p class="special">Insert the details and select the articles
-					and to create a new auction</p>
-				<form class="createForm" action="#" method="POST"
-					enctype="multipart/form-data">
-					<fieldset>
-						<p>
-							<label>Auction Title: <input type="text" name="title"
-								maxlength="20" required />
-							</label>
-						</p>
+				<div id="auctionForm">
+					<p class="special">Insert the details and select the articles
+						and to create a new auction</p>
+					<form class="createForm" action="#" method="POST"
+						enctype="multipart/form-data">
+						<fieldset>
+							<p>
+								<label>Auction Title: <input type="text" name="title"
+									maxlength="20" required />
+								</label>
+							</p>
 
-						<p>
-							<label>Minimum Increase: <input type="number" min="0"
-								step=".01" name="minIncrease" required />
-							</label>
-						</p>
+							<p>
+								<label>Minimum Increase: <input type="number" min="0"
+									step=".01" name="minIncrease" required />
+								</label>
+							</p>
 
-						<p>
-							<label>Expiry Date: <input type="datetime-local"
-								name="expiryDate" placeholder="yyyy-mm-dd HH:mm"
-								min="2023-04-13T00:00" required />
-							</label>
-						</p>
-						<div>
-							<p>Select the articles to insert in the auction:</p>
-							<table class="tableArrangement" id="myArticles">
-								<thead>
-									<tr>
-										<th>ArticleID</th>
-										<th>Name</th>
-										<th>Price</th>
-										<th>Select</th>
-									</tr>
-								</thead>
-								<tbody id="myArticlesBody"></tbody>
-							</table>
-						</div>
-						<button type="submit" name="createAuction" id="createAucSubmit">Create
-							Auction</button>
-					</fieldset>
-				</form>
+							<p>
+								<label>Expiry Date: <input type="datetime-local"
+									name="expiryDate" placeholder="yyyy-mm-dd HH:mm"
+									min="2023-04-13T00:00" required />
+								</label>
+							</p>
+							<div>
+								<p>Select the articles to insert in the auction:</p>
+								<table class="tableArrangement" id="myArticles">
+									<thead>
+										<tr>
+											<th>ArticleID</th>
+											<th>Name</th>
+											<th>Price</th>
+											<th>Select</th>
+										</tr>
+									</thead>
+									<tbody id="myArticlesBody"></tbody>
+								</table>
+							</div>
+							<button type="submit" name="createAuction" id="createAucSubmit">Create
+								Auction</button>
+						</fieldset>
+					</form>
+				</div>
 			</div>
 			<p>
 				<span class="alertMessage" id="myArticlesMessage"></span>
@@ -243,7 +246,7 @@
 		<div id="openAucDetContainer">
 			<div>
 				<h2 class="special">Auction details:</h2>
-				<table id="openAucDet" class="tableArrangement">
+				<table class="tableArrangement" id="openAucDet">
 					<thead>
 						<tr>
 							<th>AuctionID</th>
@@ -261,7 +264,7 @@
 
 			<div>
 				<h2 class="special">Offers for this auction:</h2>
-				<table id="aucOffers" class="tableArrangement">
+				<table class="tableArrangement" id="aucOffers" >
 					<thead>
 						<tr>
 							<th>UserID</th>
@@ -280,7 +283,7 @@
 
 		<div id="closedAucDetContainer">
 			<h2 class="special">Auction details:</h2>
-			<table id="closedAucDet" class="tableArrangement">
+			<table class="tableArrangement" id="closedAucDet">
 				<thead>
 					<tr>
 						<th>AuctionID</th>
