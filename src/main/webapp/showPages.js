@@ -1073,6 +1073,7 @@
 
 			makeCall("GET", "AuctionArticlesRIA?auctionID=" + auctionID, null, (req) => {
 				if (req.readyState === XMLHttpRequest.DONE) {
+					let message = req.responseText;
 
 					switch (req.status) {
 						case 200:
