@@ -96,7 +96,7 @@ public class OffersDetailsRIA extends HttpServlet {
                 return;
             }
             
-            if (offers.size() <= 0) {
+            if (offers.size() == 0) {
             	offers = null;
             }
 

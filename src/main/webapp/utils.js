@@ -29,13 +29,6 @@ function setCookie(cookieName, cookieValue, exDays) {
 	document.cookie = cookieName + '=' + cookieValue + '; expires=' + deadline.toUTCString() + '; path=/';
 }
 
-function replaceCookie(newName, cookieValue) {
-	let deadline = new Date();
-
-	deadline.setTime(deadline.getTime() + (30 * 24 * 60 * 60 * 1000));
-	document.cookie = newName + '=' + cookieValue + '; expires=' + deadline.toUTCString() + '; path=/';
-}
-
 function getCookie(cookieName) {
 	let name = cookieName + "=";
 	let cookieArray = document.cookie.split(';');

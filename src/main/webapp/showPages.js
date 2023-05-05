@@ -7,15 +7,16 @@
 	}
 
 	function Menu() {
-		this.registerEvents = (orchestrator) => {
+		const username = getCookie('username');
 
+		this.registerEvents = (orchestrator) => {
 			document.getElementById("sellPage").addEventListener('click', () => {
-				setCookie("lastAction", "SELL", 30);
+				setCookie("lastActionBy" + username, "SELL", 30);
 				orchestrator.showSell();
 			})
 
 			document.getElementById("buyPage").addEventListener('click', () => {
-				setCookie("lastAction", "BUY", 30);
+				setCookie("lastActionBy" + username, "BUY", 30);
 				orchestrator.showBuy();
 			})
 
@@ -24,21 +25,6 @@
 					if (req.readyState === XMLHttpRequest.DONE) {
 						switch (req.status) {
 							case 200:
-								// memorizes the user's cookies for a future use				
-								let username = getCookie('username');
-
-								let auctionsCookie = getCookie('recentlyViewedAuctions');
-								let recentlyViewedAuctions = new Array();
-
-								if (auctionsCookie !== "") {
-									recentlyViewedAuctions = JSON.parse(auctionsCookie);
-									replaceCookie('seenAucBy' + username, recentlyViewedAuctions);
-									cancelCookie('recentlyViewedAuctions');
-								}
-
-								replaceCookie('lastActionBy' + username, getCookie('lastAction'));
-								cancelCookie('lastAction');
-
 								cancelCookie('username');
 								window.sessionStorage.removeItem('username');
 								window.location.href = "index.html";
@@ -189,27 +175,25 @@
 	  */
 	function RecentlySeenAuc(listContainer, listContainerBody) {
 		this.listContainerBody = listContainerBody;
+		const username = getCookie('username');
 
 		this.hide = () => {
 			listContainer.style.display = "none";
 		}
 
 		this.show = () => {
-			let jsonCookie = getCookie('recentlyViewedAuctions');
+			let jsonCookie = getCookie('viewedAuctionsBy' + username);
 
 			if (!jsonCookie) {
 				this.hide();
-				return;
+
 			} else if (jsonCookie) {
-				if (jsonCookie.charAt(0) !== "[") {
-					jsonCookie = "[" + jsonCookie + "]";
-				}
-				
 				let auctionsList = JSON.parse(jsonCookie);
 
 				makeCall("GET", "RecentAuctionsListRIA?auctionIDs=" + auctionsList, null, (req) => {
 					if (req.readyState === XMLHttpRequest.DONE) {
 						let message = req.responseText;
+						let self = this;
 
 						switch (req.status) {
 							case 200:
@@ -225,7 +209,6 @@
 
 
 								let row, aucIDCell, ownIDCell, titleCell, linkCell, anchor, linkText;
-								let self = this;
 
 								auctionsList.forEach((auction) => {
 									row = document.createElement("tr");
@@ -249,9 +232,9 @@
 
 									anchor.appendChild(linkText);
 									anchor.setAttribute('auctionID', auction.auctionID);
-									anchor.addEventListener("click", (e) => {
-										// Decides if the close auction button or the offer form have to be shown
-										if (window.sessionStorage.getItem("userID") !== parseInt(auction.ownerID)) {
+									anchor.addEventListener("click", () => {
+										// Decides if the close auction button, or the offer form have to be shown
+										if (parseInt(window.sessionStorage.getItem("userID")) !== parseInt(auction.ownerID)) {
 											pageOrchestrator.openDetailsForOffer(auction.auctionID);
 										}
 										else {
@@ -295,7 +278,6 @@
 
 		this.show = () => {
 			let self = this;
-			let auctionsList = null;
 
 			this.alertBox.style.display = "none";
 			listContainer.style.display = "block";
@@ -428,7 +410,7 @@
 
 								anchor.appendChild(linkText);
 								anchor.setAttribute('auctionID', auction.auctionID);
-								anchor.addEventListener("click", (e) => {
+								anchor.addEventListener("click", () => {
 									pageOrchestrator.openDetailsForOwner(auction.auctionID);
 
 									if (Date.now() <= Date.parse(auction.expiryDate)) {
@@ -567,7 +549,9 @@
 
 							switch (req.status) {
 								case 200:
-									setCookie("lastAction", "SELL", 30);
+									const username = getCookie('username');
+
+									setCookie("lastActionBy" + username, "SELL", 30);
 									pageOrchestrator.showSell();
 									break;
 								case 403:
@@ -623,7 +607,8 @@
 
 							switch (req.status) {
 								case 200:
-									setCookie("lastAction", "SELL", 30);
+									const username = getCookie('username');
+									setCookie("lastActionBy" + username, "SELL", 30);
 									this.articleIDs = [];
 									pageOrchestrator.showSell();
 									break;
@@ -650,7 +635,6 @@
 	function MyArticles(alertBox, listContainer, listContainerBody) {
 		this.alertBox = alertBox;
 		this.listContainerBody = listContainerBody;
-		this.articleIDs = [];
 
 		this.hide = () => {
 			listContainer.style.display = "none";
@@ -789,14 +773,15 @@
 							auctionArticles.show(auction.auctionID);
 
 							// Adds the auction to the recently seen list
-							let aucCookieList = getCookie('recentlyViewedAuctions');
+							const username = getCookie('username');
+							let aucCookieList = getCookie('viewedAuctionsBy' + username);
 							let aucID = parseInt(auction.auctionID);
-							let seenList = new Array();
+							let seenList = [];
 
 							if (aucCookieList) {
 								seenList = JSON.parse(aucCookieList);
 
-								if ((seenList.find(i => i === aucID) === undefined) || (!seenList.includes(aucID))) {
+								if (!seenList.includes(aucID)) {
 									seenList.push(aucID);
 								}
 							} else {
@@ -804,7 +789,7 @@
 							}
 
 							let newJson = JSON.stringify(seenList);
-							setCookie('recentlyViewedAuctions', newJson, 30);
+							setCookie('viewedAuctionsBy' + username, newJson, 30);
 							break;
 						case 403:
 							cancelCookie('username');
@@ -894,14 +879,11 @@
 	 * Allows the user to make an offer for an open auction
 	 */
 	function OfferForm(formContainer) {
-		this.formContainer = formContainer;
-
 		this.registerEvent = () => {
 			document.getElementById("offerSubmit").addEventListener('click', (e) => {
 				let form = e.target.closest("form");
 
 				if (form.checkValidity()) {
-					let self = this;
 					let auctionID = document.getElementById("offerID").value;
 					let price = document.getElementById("offerPrice").value;
 
@@ -943,13 +925,26 @@
 	 * Allows the owner of the auction to close it
 	 */
 	function CloseAucButton(formContainer) {
-		this.formContainer = formContainer;
-
 		this.registerEvent = () => {
 			document.getElementById("closeSubmit").addEventListener('click', (e) => {
 				let form = e.target.closest("form");
 				let auctionID = document.getElementById("closeID").value;
-				cancelCookie(auctionID);
+
+				// Removes the auction from the recently seen list
+				const username = getCookie('username');
+				let aucCookieList = getCookie('viewedAuctionsBy' + username);
+				let seenList = [];
+
+				if (aucCookieList) {
+					seenList = JSON.parse(aucCookieList);
+
+					if (seenList.includes(auctionID)) {
+						seenList.splice(seenList.indexOf(auctionID));
+					}
+				}
+				
+				let newJson = JSON.stringify(seenList);
+				setCookie('viewedAuctionsBy' + username, newJson, 30);
 
 				if (form.checkValidity()) {
 					makeCall("POST", "CloseOpenAuctionRIA?auctionID=" + auctionID, form, (req) => {
@@ -1240,8 +1235,8 @@
 			);
 			offerForm.registerEvent();
 			offerForm.hide();
-
-			let lastAction = getCookie("lastAction");
+			const username = getCookie('username');
+			let lastAction = getCookie("lastActionBy" + username);
 
 			if (lastAction === "SELL") {
 				this.showSell();
@@ -1330,25 +1325,11 @@
 	let pageOrchestrator = new PageOrchestrator();
 
 	window.addEventListener("load", () => {
-
 		const username = getCookie('username');
 
 		if (!(username)) {
 			window.location.href = "index.html";
 		} else {
-			let pastAucSeen = getCookie('seenAucBy' + username);
-			let lastSessionAction = getCookie('lastActionBy' + username);
-
-			if (pastAucSeen !== "") {
-				replaceCookie('recentlyViewedAuctions', pastAucSeen);
-				cancelCookie('seenAucBy' + username);
-			}
-
-			if (lastSessionAction !== "") {
-				replaceCookie('lastAction', lastSessionAction);
-				cancelCookie('lastActionBy' + username);
-			}
-
 			pageOrchestrator.start();
 		}
 	}, false);

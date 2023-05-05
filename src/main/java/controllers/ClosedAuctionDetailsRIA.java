@@ -63,7 +63,7 @@ public class ClosedAuctionDetailsRIA extends HttpServlet {
             throws IOException {
         int auctionID = Integer.parseInt(request.getParameter("auctionID"));
 
-        User winner = null;
+        User winner;
         Auction closedAuction;
         Offer maxOffer;
         ObjContainer objContainer = new ObjContainer();
