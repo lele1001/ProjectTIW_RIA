@@ -60,15 +60,20 @@ public class CloseOpenAuctionRIA extends HttpServlet {
             throws IOException {
         User user = (User) request.getSession(false).getAttribute("user");
         int auctionID;
-
+        
         try {
-            auctionID = Integer.parseInt(request.getParameter("auctionID"));
-        } catch (NumberFormatException e) {
-            e.printStackTrace();
-            response.getWriter().println("Errore: accesso al database fallito!");
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            return;
-        }
+			auctionID = Integer.parseInt(request.getParameter("auctionID"));
+		} catch (NumberFormatException e) {
+			response.getWriter().println("Errore: inserire un intero!");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
+
+		if (auctionID < 0) {
+			response.getWriter().println("Errore: inserire un intero positivo!");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
 
         Auction auction;
         Offer maxOffer;
@@ -95,7 +100,6 @@ public class CloseOpenAuctionRIA extends HttpServlet {
                     return;
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
                 response.getWriter().println("Errore: accesso al database fallito!");
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 return;
@@ -111,7 +115,6 @@ public class CloseOpenAuctionRIA extends HttpServlet {
                     winnerID = maxOffer.getUserID();
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
                 response.getWriter().println("Errore: accesso al database fallito!");
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 return;
@@ -120,7 +123,6 @@ public class CloseOpenAuctionRIA extends HttpServlet {
             try {
                 auc.closeAuction(auctionID, winnerID);
             } catch (SQLException e) {
-                e.printStackTrace();
                 response.getWriter().println("Errore: accesso al database fallito!");
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 return;

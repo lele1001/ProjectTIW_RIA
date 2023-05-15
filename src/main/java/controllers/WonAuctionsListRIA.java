@@ -69,7 +69,6 @@ public class WonAuctionsListRIA extends HttpServlet {
 				// retrieves all the auctions won by the user
 				wonAuctions = auc.getWonAuctions(user.getUserID());
 			} catch (SQLException e) {
-				e.printStackTrace();
 				response.getWriter().println("Errore: accesso al database fallito!");
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				return;

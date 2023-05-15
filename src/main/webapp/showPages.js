@@ -116,6 +116,7 @@
 			document.getElementById("keyAucContainer").style.display = "block";
 			listContainer.style.display = "block";
 			listContainerBody.style.display = "block";
+			document.getElementById("keyAuctions").classList.add('tableArrangement');
 			listContainerBody.innerHTML = "";
 
 			let row, aucIDCell, ownIDCell, titleCell, remTimeCell, linkCell, anchor, linkText;
@@ -277,15 +278,10 @@
 		}
 
 		this.show = () => {
-			let self = this;
-
-			this.alertBox.style.display = "none";
-			listContainer.style.display = "block";
-			this.listContainerBody.innerHTML = "";
-
 			makeCall("GET", "WonAuctionsListRIA", null, (req) => {
 				if (req.readyState === XMLHttpRequest.DONE) {
 					let message = req.responseText;
+					let self = this;
 
 					switch (req.status) {
 						case 200:
@@ -298,6 +294,10 @@
 								return;
 							}
 
+							listContainer.style.display = "block";
+							this.listContainerBody.innerHTML = "";
+							self.alertBox.style.display = "none";
+							
 							let row, auctionIDCell, titleCell, finalPriceCell, linkCell, anchor, linkText;
 
 							auctionsList.forEach((auction) => {
@@ -330,7 +330,7 @@
 								anchor.href = "#";
 								row.appendChild(linkCell);
 
-								self.listContainerBody.appendChild(row);
+								listContainerBody.appendChild(row);
 							});
 							break;
 						case 403:
@@ -338,8 +338,8 @@
 							window.location.href = "index.html";
 							break;
 						default:
-							this.alertBox.style.display = "block";
-							this.alertBox.textContent = message;
+							self.alertBox.style.display = "block";
+							self.alertBox.textContent = message;
 							return;
 					}
 				}
@@ -820,9 +820,9 @@
 			let self = this;
 			let offersList = null;
 
-			this.alertBox.style.display = "none";
+			self.alertBox.style.display = "none";
 			listContainer.style.display = "block";
-			this.listContainerBody.innerHTML = "";
+			self.listContainerBody.innerHTML = "";
 
 			makeCall("GET", "OffersDetailsRIA?auctionID=" + auctionID, null, (req) => {
 				if (req.readyState === XMLHttpRequest.DONE) {
@@ -865,8 +865,8 @@
 							window.location.href = "index.html";
 							break;
 						default:
-							this.alertBox.style.display = "block";
-							this.alertBox.textContent = message;
+							self.alertBox.style.display = "block";
+							self.alertBox.textContent = message;
 							return;
 					}
 				}
@@ -942,7 +942,7 @@
 						seenList.splice(seenList.indexOf(auctionID));
 					}
 				}
-				
+
 				let newJson = JSON.stringify(seenList);
 				setCookie('viewedAuctionsBy' + username, newJson, 30);
 

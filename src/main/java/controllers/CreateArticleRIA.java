@@ -84,7 +84,6 @@ public class CreateArticleRIA extends HttpServlet {
         try {
             articleID = generateArticleID();
         } catch (SQLException e) {
-            e.printStackTrace();
             response.getWriter().println("Errore: ID dell'articolo non creato correttamente!");
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             return;
@@ -93,8 +92,14 @@ public class CreateArticleRIA extends HttpServlet {
         Part imagePart = request.getPart("image");
         String fileName;
         String contentType, outputPath;
-
-        price = Float.parseFloat(request.getParameter("price"));
+        
+        try {
+        	price = Float.parseFloat(request.getParameter("price"));
+		} catch (NumberFormatException e) {
+			response.getWriter().println("Errore: inserire un intero!");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
 
         // checks if the connection is active
         if (checkConnection(connection)) {
@@ -126,7 +131,6 @@ public class CreateArticleRIA extends HttpServlet {
                 try (InputStream fileContent = imagePart.getInputStream()) {
                     Files.copy(fileContent, Paths.get(outputPath));
                 } catch (Exception e) {
-                    e.printStackTrace();
                     response.getWriter().println("Errore: impossibile salvare il file!");
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     return;
@@ -148,7 +152,6 @@ public class CreateArticleRIA extends HttpServlet {
             try {
                 art.createArticle(articleID, user.getUserID(), name, description, fileName, price);
             } catch (SQLException e) {
-                e.printStackTrace();
                 response.getWriter().println("Errore: accesso al database fallito!");
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 return;

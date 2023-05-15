@@ -69,7 +69,6 @@ public class UserArticlesRIA extends HttpServlet {
 				// retrieves the articles in the auction
 				userArticles = art.getArticlesByUserIDNotInAuctions(userID);
 			} catch (SQLException e) {
-				e.printStackTrace();
 				response.getWriter().println("Errore: accesso al database fallito!");
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				return;

@@ -88,7 +88,6 @@ public class OpenAuctionsListRIA extends HttpServlet {
 					openAuctions = null;
 				}
 			} catch (SQLException e) {
-				e.printStackTrace();
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.getWriter().println("Errore: accesso al database fallito!");
 				return;

@@ -81,7 +81,6 @@ public class CreateAuctionRIA extends HttpServlet {
         try {
             auctionID = generateAuctionID();
         } catch (SQLException e) {
-            e.printStackTrace();
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             response.getWriter().println("Errore: ID dell'asta non creato correttamente!");
             return;
@@ -92,7 +91,15 @@ public class CreateAuctionRIA extends HttpServlet {
         LocalDateTime expiryDate = LocalDateTime.parse(request.getParameter("expiryDate"))
                 .truncatedTo(ChronoUnit.MINUTES);
         String title = request.getParameter("title");
-        float minIncrease = Float.parseFloat(request.getParameter("minIncrease"));
+        float minIncrease;
+        
+        try {
+        	minIncrease = Float.parseFloat(request.getParameter("minIncrease"));
+		} catch (NumberFormatException e) {
+			response.getWriter().println("Errore: inserire un intero!");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
 
         // checks if the connection is active
         if (checkConnection(connection)) {
@@ -137,7 +144,6 @@ public class CreateAuctionRIA extends HttpServlet {
                         return;
                     }
                 } catch (SQLException e) {
-                    e.printStackTrace();
                     response.getWriter().println("Errore: accesso al database fallito!");
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     return;
@@ -149,7 +155,6 @@ public class CreateAuctionRIA extends HttpServlet {
                 try {
                     art.associateToAuction(articleID, auctionID);
                 } catch (SQLException e) {
-                    e.printStackTrace();
                     response.getWriter().println("Errore: accesso al database fallito!");
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     return;
@@ -161,7 +166,6 @@ public class CreateAuctionRIA extends HttpServlet {
             try {
                 auc.createAuction(auctionID, user.getUserID(), title, price, minIncrease, expiryDate);
             } catch (SQLException e) {
-                e.printStackTrace();
                 response.getWriter().println("Errore: accesso al database fallito!");
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 return;

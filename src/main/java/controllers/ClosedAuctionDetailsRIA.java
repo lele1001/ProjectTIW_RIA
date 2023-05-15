@@ -28,133 +28,141 @@ import utilities.ObjContainer;
 
 @WebServlet("/ClosedAuctionDetailsRIA")
 public class ClosedAuctionDetailsRIA extends HttpServlet {
-    @Serial
-    private static final long serialVersionUID = 1L;
-    private Connection connection = null;
+	@Serial
+	private static final long serialVersionUID = 1L;
+	private Connection connection = null;
 
-    public ClosedAuctionDetailsRIA() {
-        super();
-    }
+	public ClosedAuctionDetailsRIA() {
+		super();
+	}
 
-    /**
-     * Initializes the configuration of the servlet, of the thymeleaf engine and
-     * connects to the database
-     */
-    public void init() throws ServletException {
-        ServletContext context = getServletContext();
-        connection = ConnectionHandler.getConnection(context);
-    }
+	/**
+	 * Initializes the configuration of the servlet, of the thymeleaf engine and
+	 * connects to the database
+	 */
+	public void init() throws ServletException {
+		ServletContext context = getServletContext();
+		connection = ConnectionHandler.getConnection(context);
+	}
 
-    /**
-     * Checks if the connection is active
-     */
-    private boolean checkConnection(Connection connection) {
-        try {
-            if (connection != null && !connection.isClosed())
-                return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+	/**
+	 * Checks if the connection is active
+	 */
+	private boolean checkConnection(Connection connection) {
+		try {
+			if (connection != null && !connection.isClosed())
+				return true;
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
 
-        return false;
-    }
+		return false;
+	}
 
-    private void setupPage(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        int auctionID = Integer.parseInt(request.getParameter("auctionID"));
+	private void setupPage(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		int auctionID;
 
-        User winner;
-        Auction closedAuction;
-        Offer maxOffer;
-        ObjContainer objContainer = new ObjContainer();
+		try {
+			auctionID = Integer.parseInt(request.getParameter("auctionID"));
+		} catch (NumberFormatException e) {
+			response.getWriter().println("Errore: inserire un intero!");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
 
-        // checks if the connection is active
-        if (checkConnection(connection)) {
-            AuctionDAO auc = new AuctionDAO(connection);
+		if (auctionID < 0) {
+			response.getWriter().println("Errore: inserire un intero positivo!");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
 
-            try {
-                // retrieves the auction
-                closedAuction = auc.getClosedAuctionByID(auctionID);
-            } catch (SQLException e) {
-                e.printStackTrace();
-                response.getWriter().println("Errore: accesso al database fallito!");
-                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                return;
-            }
+		User winner;
+		Auction closedAuction;
+		Offer maxOffer;
+		ObjContainer objContainer = new ObjContainer();
 
-            if (closedAuction != null) {
-                OfferDAO off = new OfferDAO(connection);
+		// checks if the connection is active
+		if (checkConnection(connection)) {
+			AuctionDAO auc = new AuctionDAO(connection);
 
-                try {
-                    // retrieves the maximum offer for the auction
-                    maxOffer = off.getMaxOffer(auctionID);
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                    response.getWriter().println("Errore: accesso al database fallito!");
-                    response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                    return;
-                }
+			try {
+				// retrieves the auction
+				closedAuction = auc.getClosedAuctionByID(auctionID);
+			} catch (SQLException e) {
+				response.getWriter().println("Errore: accesso al database fallito!");
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				return;
+			}
 
-                UserDAO us = new UserDAO(connection);
+			if (closedAuction != null) {
+				OfferDAO off = new OfferDAO(connection);
 
-                if (maxOffer != null) {
-                    try {
-                        // retrieves the user that won the auction
-                        winner = us.getUserByID(maxOffer.getUserID());
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                        response.getWriter().println("Errore: accesso al database fallito!");
-                        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-                        return;
-                    }
-                } else {
-                	winner = new User(0, "//", "//", "//");
-                }
-            } else {
-                response.getWriter().println("Errore: nessuna asta trovata!");
-                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-                return;
-            }
+				try {
+					// retrieves the maximum offer for the auction
+					maxOffer = off.getMaxOffer(auctionID);
+				} catch (SQLException e) {
+					response.getWriter().println("Errore: accesso al database fallito!");
+					response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+					return;
+				}
 
-            objContainer.setFirstObj(closedAuction);
-            objContainer.setSecondObj(winner);
+				UserDAO us = new UserDAO(connection);
 
-            Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
-                    .create();
-            String json = gson.toJson(objContainer);
+				if (maxOffer != null) {
+					try {
+						// retrieves the user that won the auction
+						winner = us.getUserByID(maxOffer.getUserID());
+					} catch (SQLException e) {
+						response.getWriter().println("Errore: accesso al database fallito!");
+						response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+						return;
+					}
+				} else {
+					winner = new User(0, "//", "//", "//");
+				}
+			} else {
+				response.getWriter().println("Errore: nessuna asta trovata!");
+				response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+				return;
+			}
 
-            response.setStatus(HttpServletResponse.SC_OK);
-            response.setContentType("application/json");
-            response.setCharacterEncoding("UTF-8");
-            response.getWriter().write(json);
-        }
-    }
+			objContainer.setFirstObj(closedAuction);
+			objContainer.setSecondObj(winner);
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        // checks if the session does not exist or is expired
-        if (request.getSession(false) == null || request.getSession(false).getAttribute("user") == null) {
-            String loginPath = getServletContext().getContextPath() + "/index.html";
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            response.setHeader("Location", loginPath);
-        } else if (Integer.parseInt(request.getParameter("auctionID")) > 0) {
-            setupPage(request, response);
-        }
-    }
+			Gson gson = new GsonBuilder().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
+					.create();
+			String json = gson.toJson(objContainer);
 
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
-            throws IOException {
-        doPost(request, response);
-    }
+			response.setStatus(HttpServletResponse.SC_OK);
+			response.setContentType("application/json");
+			response.setCharacterEncoding("UTF-8");
+			response.getWriter().write(json);
+		}
+	}
 
-    /**
-     * Called when the servlet is destroyed
-     */
-    public void destroy() {
-        try {
-            ConnectionHandler.closeConnection(connection);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		// checks if the session does not exist or is expired
+		if (request.getSession(false) == null || request.getSession(false).getAttribute("user") == null) {
+			String loginPath = getServletContext().getContextPath() + "/index.html";
+			response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+			response.setHeader("Location", loginPath);
+		} else {
+			setupPage(request, response);
+		}
+	}
+
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		doPost(request, response);
+	}
+
+	/**
+	 * Called when the servlet is destroyed
+	 */
+	public void destroy() {
+		try {
+			ConnectionHandler.closeConnection(connection);
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
 }

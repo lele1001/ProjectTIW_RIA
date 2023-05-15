@@ -59,7 +59,21 @@ public class AuctionArticlesRIA extends HttpServlet {
 
     private void setupPage(HttpServletRequest request, HttpServletResponse response)
             throws IOException {
-        int auctionID = Integer.parseInt(request.getParameter("auctionID"));
+        int auctionID;
+        
+        try {
+			auctionID = Integer.parseInt(request.getParameter("auctionID"));
+		} catch (NumberFormatException e) {
+			response.getWriter().println("Errore: inserire un intero!");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
+
+		if (auctionID < 0) {
+			response.getWriter().println("Errore: inserire un intero positivo!");
+			response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+			return;
+		}
 
         Auction auction;
         List<Article> articlesList = null;
@@ -72,7 +86,6 @@ public class AuctionArticlesRIA extends HttpServlet {
                 // retrieves the auction
                 auction = auc.getAuctionByID(auctionID);
             } catch (SQLException e) {
-                e.printStackTrace();
                 response.getWriter().println("Errore: accesso al database fallito!");
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 return;
@@ -85,7 +98,6 @@ public class AuctionArticlesRIA extends HttpServlet {
                     // retrieves the articles in the auction
                     articlesList = art.getArticlesByAuctionID(auctionID);
                 } catch (SQLException e) {
-                    e.printStackTrace();
                     response.getWriter().println("Errore: accesso al database fallito!");
                     response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                     return;
@@ -114,7 +126,7 @@ public class AuctionArticlesRIA extends HttpServlet {
             String loginPath = getServletContext().getContextPath() + "/index.html";
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setHeader("Location", loginPath);
-        } else if (Integer.parseInt(request.getParameter("auctionID")) > 0) {
+        } else {
             setupPage(request, response);
         }
     }

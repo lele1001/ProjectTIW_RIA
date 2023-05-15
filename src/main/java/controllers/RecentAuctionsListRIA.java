@@ -69,7 +69,21 @@ public class RecentAuctionsListRIA extends HttpServlet {
 			auctionIDs = auctionIDsStr.split(",");
 
 			for (String s : auctionIDs) {
-				int auctionID = Integer.parseInt(s);
+				int auctionID;
+				
+				try {
+					auctionID = Integer.parseInt(s);
+				} catch (NumberFormatException e) {
+					response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Errore: inserire un intero!");
+					return;
+				}
+				
+				if (auctionID < 0) {
+					response.getWriter().println("Errore: inserire un intero positivo!");
+					response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+					return;
+				}
+
 
 				try {
 					// retrieves the open auction
@@ -79,7 +93,6 @@ public class RecentAuctionsListRIA extends HttpServlet {
 						seenAuctions.add(a);
 					}
 				} catch (SQLException e) {
-					e.printStackTrace();
 					response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 					response.getWriter().println("Errore: accesso al database fallito!");
 					return;
