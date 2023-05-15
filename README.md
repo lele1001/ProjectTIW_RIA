@@ -5,6 +5,7 @@
 **EN** -The aim of the project is the development of a web application that satisfies the given specifications. This project, together with its HTML version, is valid as final exam for the **"Tecnologie Informatiche per il Web"** course of **Computer Science Engineering** at Politecnico di Milano.
 
 **Teacher**: Piero Fraternali
+
 **Final mark**: 27/30
 
 ## Project specification - Esercizio 1: aste online
