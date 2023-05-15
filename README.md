@@ -9,7 +9,7 @@
 
 ## Project specification - Esercizio 1: aste online
 
-# Versione JavaScript
+### Versione JavaScript
 
 Si realizzi un’applicazione client server web che estende e/o modifica le specifiche della versione HTML pura come segue:
 
